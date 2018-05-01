@@ -14,6 +14,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+import Antibody
 
 patterns = []
 
@@ -24,11 +25,12 @@ maxnumatigenes = 5
 n_neighbors = 3
 
 iternum = 100
+antibodynumber = 100
 
 cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
 cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
 
-antibodySet = set()
+antibodySet = []
 
 def sortSet(s):
     ss = sorted(list(s))
@@ -83,6 +85,7 @@ def knn(i, x, s):
     # neigh = NearestNeighbors(n_neighbors=1)
     # neigh.fit(get_training(x, s), get_labels(x))
     # neigh.kneighbors(df.iloc[i,s], n_neighbors = n_neighbors, return_distance=True)
+    maxscore = 0
     for weights in ['uniform', 'distance']:
         clf = neighbors.KNeighborsClassifier(n_neighbors, weights = weights)
 
@@ -91,10 +94,15 @@ def knn(i, x, s):
         yp = get_labels(x)
         clf.fit(xp, yp)
         score = clf.score(df.iloc[X_test,s], y_test)
-        print(score)
-        if score>0.7:
-            xp = xp.values
+        if maxscore<score:
+            maxscore = score
+        print(weights, score)
+    return maxscore
+        # if score>0.7:
+        #     xp = xp.values
 
+def calculateAffinity(antibody, n):
+    return antibody.rank/n
 
 
             # neigh. predict_proba(df[i,s])
@@ -140,20 +148,16 @@ y = dfclass.values
 X_train,X_test,y_train,y_test = train_test_split(X.index,y,test_size=0.5, random_state=42)
 X =  X.iloc[X_train] # return dataframe train\
 X = X.values
+
 for i in range(2,maxnumatigenes):
     s = set()
-    for j in range(iternum):
-        while len(s)<i:
-            s.add(random.randint(0,cnum))
-        st = sortSet(s)
-        if st not in antibodySet:
-            antibodySet.add(st)
-        else:
-            j = j-1  # retry
-            continue
-        for k in X_test:
-            knn(k, X_train, list(s))
+    for j in range(antibodynumber):
+        patterns.append(Antibody(number=i))
 
+        for k in X_test:
+            patterns[j].rank = patterns[j].rank + knn(k, X_train, patterns[j].features)
+        patterns[j].rank = patterns[j].rank/len(X_test) # as an indicator we take average of all scores
+    nextGeneration() #TODO mutations and cloning
 
 
 # sss = StratifiedShuffleSplit(n_splits=3, test_size=0.5, random_state=0)
