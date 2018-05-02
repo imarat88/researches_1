@@ -16,6 +16,7 @@ import copy
 import operator
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import ListedColormap
 
 
@@ -91,67 +92,75 @@ def sortSet(s):
     sts = ','.join([str(x) for x in ss])
     return sts
 
-def plot3d():
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.pyplot as plt
-    import numpy as np
+def plot3d(antibody):
+
+
+    dfplot = df.iloc[:, antibody.features]
+    dfplot = pd.concat([dfplot, dfclass], axis=1, ignore_index=True)
+    dfplot = pd.concat([dfplot, dflabel], axis=1, ignore_index=True)
+    col = [str(x) for x in antibody.features]
+    col.append("class_id")
+    col.append("class")
+    dfplot.columns = col
+    xlabel = col[0]
+    ylabel = col[1]
+    zlabel = col[2]
+
+    clr = {'short_acting':"red", "medium_acting": "green", "Long_acting":"blue"}
+    marker = {'short_acting':"o", "medium_acting": "^", "Long_acting":"*"}
+    labels = ['short_acting', 'medium_acting', 'Long_acting']
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     n = 100
+    for row in dfplot.iterrows():
+        index, x, y, z, cl_id, cl = row[0], row[1][0], row[1][1], row[1][2], int(row[1][3]), row[1][4]
+        ax.scatter(x, y, z, c=clr[cl], marker=marker[cl])
 
-
-    for c, m, zlow, zhigh in [('r', 'o', -50, -25), ('b', '^', -30, -5)]:
-        xs = random.randrange(n, 23, 32)
-        ys = random.randrange(n, 0, 100)
-        zs = random.randrange(n, zlow, zhigh)
-        ax.scatter(xs, ys, zs, c=c, marker=m)
-
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-
-    plt.show()
+    ax.set_xlabel('feature '+xlabel)
+    ax.set_ylabel('feature '+ylabel)
+    ax.set_zlabel('feature '+zlabel)
+    plt.title('3d feature distribution')
+    filename = '3d'+'_'.join(dfplot.columns)+'.png'
+    plt.savefig(filename)
 
 def plot2d(antibody):
 
     dfplot = df.iloc[:, antibody.features]
     dfplot = pd.concat([dfplot, dfclass], axis=1, ignore_index=True)
+    dfplot = pd.concat([dfplot, dflabel], axis=1, ignore_index=True)
     col = [str(x) for x in antibody.features]
+    col.append("class_id")
     col.append("class")
     dfplot.columns = col
-
+    xlabel = 'feature '+ col[0]
+    ylabel = 'feature '+ col[1]
     plt.figure(figsize=(15, 10))
     parallel_coordinates(dfplot, "class")
     plt.title('Parallel Coordinates Plot', fontsize=20, fontweight='bold')
     plt.xlabel('Features', fontsize=15)
     plt.ylabel('Features values', fontsize=15)
     plt.legend(loc=1, prop={'size': 15}, frameon=True, shadow=True, facecolor="white", edgecolor="black")
-    plt.show()
-
-
-    N = 60
-    g1 = (0.6 + 0.6 * np.random.rand(N), np.random.rand(N))
-    g2 = (0.4 + 0.3 * np.random.rand(N), 0.5 * np.random.rand(N))
-    g3 = (0.3 * np.random.rand(N), 0.3 * np.random.rand(N))
+    filename = 'parallel_'+'_'.join(dfplot.columns)+'.png'
+    plt.savefig(filename)
 
     colors = ["red", "green", "blue"]
-
+    clr = {'short_acting':"red", "medium_acting": "green", "Long_acting":"blue"}
+    labels = ['short_acting', 'medium_acting', 'Long_acting']
     # Create plot
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1, axisbg="1.0")
 
     for row in dfplot.iterrows():
-        index, x, y, cl = row[0], row[1][0], row[1][1], int(row[1][2])
-        ax.scatter(x, y, alpha=0.8, c=colors[cl], edgecolors='none', s=30, label=dflabel.iloc[index,0])
-
-    plt.title('Matplot scatter plot')
-    plt.legend(loc=2)
-    plt.show()
-
-
-    filename = '/var/www/images/backtest/%s.png'
-    fig.savefig(filename, transparent=True)  # save the figure to file
+        index, x, y, cl_id, cl = row[0], row[1][0], row[1][1], int(row[1][2]), row[1][3]
+        ax.scatter(x, y, alpha=0.8, c=clr[cl], edgecolors='none', s=30, label=cl)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    plt.title('2d feature distribution')
+    plt.legend()
+    filename = 'scatter_'+'_'.join(dfplot.columns)+'.png'
+    fig.savefig(filename)  # save the figure to file
     plt.close(fig)
 
 def knn(x, s):
@@ -245,8 +254,8 @@ X =  X.iloc[X_train] # return dataframe train\
 X = X.values
 
 
-
 for i in range(2,maxnumatigenes):
+#for i in [3]:
     first = True
     antibodycombs = generateAnibodies(antibodynumber, i)
     for j in range(iternum):
@@ -271,11 +280,13 @@ for i in range(2,maxnumatigenes):
 
     memory_antibodies[i] = antibodycombs[:bestnum]
 
-for j in memory_antibodies[2]:
-    plot2d(j)
+# for j in memory_antibodies[2]:
+#      plot2d(j)
 
 for j in memory_antibodies[3]:
     plot3d(j)
+
+
 
 # sss = StratifiedShuffleSplit(n_splits=3, test_size=0.5, random_state=0)
 # sss.get_n_splits(X, y)
