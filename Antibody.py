@@ -14,10 +14,29 @@ class Antibody:
             self.features = features
         else:
             s = set()
-            while True:
-                while len(s) < number:
-                    element = random.randint(0, Antibody.maxfeatures)
-                    s.add(element)
-                if sortSet(s) not in Antibody.antibodySet:
-                    break
+            s = self.generateSet(s, number)
             self.features = list(s)
+            self.feature_set = s
+            self.number = number
+
+    def generateSet(self, S = set(), number = 0):
+        while True:
+            s = set(S)
+            while len(s) < number:
+                element = random.randint(0, Antibody.maxfeatures)
+                s.add(element)
+            if sortSet(s) not in Antibody.antibodySet:
+                return s
+
+    def mutate(self, affinity_rank=1):
+
+        num_mutations = min(affinity_rank, len(self.features))
+
+        mutation_keys = random.sample(range(len(self.features)))
+
+        for key in mutation_keys:
+            self.feature_set.pop(self.features[key])
+
+        self.feature_set = self.generateSet(self.feature_set, self.number) #mutation
+
+        return self
