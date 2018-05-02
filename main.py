@@ -35,7 +35,7 @@ iternum = 100
 antibodynumber = 100
 
 clonepercentage = 30
-
+clonepercentage2 = 0.1
 cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
 cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
 
@@ -46,7 +46,7 @@ import random
 
 class Antibody:
     antibodySet = set()
-    maxfeatures = 1520
+    maxfeatures = 1519
     def __init__(self, features = None, number = None):
         self.rank = 0.0
         if features is not None:
@@ -117,7 +117,9 @@ def plot2d(antibody):
 
     dfplot = df.iloc[:, antibody.features]
     dfplot = pd.concat([dfplot, dfclass], axis=1, ignore_index=True)
-    dfplot.columns = [str(x) for x in antibody.features].append("class")
+    col = [str(x) for x in antibody.features]
+    col.append("class")
+    dfplot.columns = col
 
     plt.figure(figsize=(15, 10))
     parallel_coordinates(dfplot, "class")
@@ -128,6 +130,29 @@ def plot2d(antibody):
     plt.show()
 
 
+    N = 60
+    g1 = (0.6 + 0.6 * np.random.rand(N), np.random.rand(N))
+    g2 = (0.4 + 0.3 * np.random.rand(N), 0.5 * np.random.rand(N))
+    g3 = (0.3 * np.random.rand(N), 0.3 * np.random.rand(N))
+
+    colors = ["red", "green", "blue"]
+
+    # Create plot
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1, axisbg="1.0")
+
+    for row in dfplot.iterrows():
+        index, x, y, cl = row[0], row[1][0], row[1][1], int(row[1][2])
+        ax.scatter(x, y, alpha=0.8, c=colors[cl], edgecolors='none', s=30, label=dflabel.iloc[index,0])
+
+    plt.title('Matplot scatter plot')
+    plt.legend(loc=2)
+    plt.show()
+
+
+    filename = '/var/www/images/backtest/%s.png'
+    fig.savefig(filename, transparent=True)  # save the figure to file
+    plt.close(fig)
 
 def knn(x, s):
 
@@ -194,6 +219,7 @@ dflong = df[df["Class"] == "Long_acting"]
 antibodies = []
 
 dfclass = df.loc[:,df.columns == 'Class']
+dflabel = df.loc[:,df.columns == 'Class']
 
 df = df.loc[:,df.columns != 'Class']
 
@@ -222,8 +248,8 @@ X = X.values
 
 for i in range(2,maxnumatigenes):
     first = True
+    antibodycombs = generateAnibodies(antibodynumber, i)
     for j in range(iternum):
-        antibodycombs = generateAnibodies(antibodynumber, i)
         antibodycombs.sort(key=lambda antibody:antibody.rank, reverse=True)
         antibodycomsnum = len(antibodycombs)
         affinity_rank = 0
@@ -231,7 +257,7 @@ for i in range(2,maxnumatigenes):
         for antibody in antibodycombs[:int(antibodycomsnum*clonepercentage/100)]:
             affinity_rank = affinity_rank+1
 
-            antibody_clones = clone_antibody(antibody, clonepercentage, antibodycomsnum, affinity_rank)
+            antibody_clones = clone_antibody(antibody, clonepercentage2, antibodycomsnum, affinity_rank)
 
             for clone in antibody_clones:
                 mutated = clone.mutate(affinity_rank) # mutated
